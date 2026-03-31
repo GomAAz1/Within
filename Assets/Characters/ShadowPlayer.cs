@@ -1,136 +1,214 @@
 using UnityEngine;
+using UnityEngine.Rendering;
+using System.Collections.Generic;
 
-public class ShadowPlayer   : MonoBehaviour
+public class ShadowPlayer : MonoBehaviour
 {
-    [Header("Two Players Setup")]
-    public Transform realPlayer;   // اسحب اللاعب الحقيقي هنا
-    public Transform shadowPlayer; // اسحب اللاعب الضل هنا
-    public Transform playerCamera; // الكاميرا
-    public bool isShadowActive = false; // هل نتحكم في الضل دلوقت؟
+    struct Command
+    {
+        public float h, v;
+        public bool run, jump;
+        public Quaternion rot;
+        public float time;
+    }
 
-    [Header("Movement Speeds")]
+    [Header("Characters Setup")]
+    public CharacterController realCC;
+    public CharacterController shadowCC;
+    public GameObject realCamera, shadowCamera;
+    public Volume shadowVolume;
+
+    [Header("Keys & Settings")]
+    public KeyCode switchKey = KeyCode.Tab;
+    public KeyCode freezeKey = KeyCode.F;
+    public KeyCode recallKey = KeyCode.R;
+    public float followDelay = 1.0f;
     public float walkSpeed = 5f;
     public float runSpeed = 10f;
-    public float jumpForce = 7.5f;
-
-    [Header("Settings")]
+    public float jumpForce = 8f;
+    public float gravity = 30f; // زودنا الجاذبية للثبات
     public float mouseSensitivity = 200f;
-    public LayerMask groundMask;
 
-    private Rigidbody realRB, shadowRB;
+    private Queue<Command> history = new Queue<Command>();
     private Animator realAnim, shadowAnim;
+    private bool isShadowActive = false;
+    private bool isFrozen = false;
+    private bool isRecalling = false;
     private float xRotation = 0f;
+    private float realYV = -2f, shadowYV = -2f;
 
     void Start()
     {
-        realRB = realPlayer.GetComponent<Rigidbody>();
-        shadowRB = shadowPlayer.GetComponent<Rigidbody>();
-        realAnim = realPlayer.GetComponent<Animator>();
-        shadowAnim = shadowPlayer.GetComponent<Animator>();
+        realAnim = realCC.GetComponent<Animator>();
+        shadowAnim = shadowCC.GetComponent<Animator>();
+
+        // منع جليتش البداية: تعطيل مؤقت ثم تفعيل
+        StartCoroutine(StartPhysicsSafety());
 
         Cursor.lockState = CursorLockMode.Locked;
+        UpdateVisuals();
+    }
+
+    System.Collections.IEnumerator StartPhysicsSafety()
+    {
+        realCC.enabled = shadowCC.enabled = false;
+        yield return new WaitForEndOfFrame();
+        realCC.enabled = shadowCC.enabled = true;
     }
 
     void Update()
     {
+        HandleInput();
         HandleMouseLook();
 
-        // زرار التبديل (Tab)
-        if (Input.GetKeyDown(KeyCode.Tab))
-        {
-            SwitchPlayer();
-        }
+        CharacterController leader = isShadowActive ? shadowCC : realCC;
+        Animator leaderAnim = isShadowActive ? shadowAnim : realAnim;
+        CharacterController follower = isShadowActive ? realCC : shadowCC;
+        Animator followerAnim = isShadowActive ? realAnim : shadowAnim;
 
-        // النط (بيشتغل للي أنت بتتحكم فيه دلوقت)
-        if (Input.GetButtonDown("Jump"))
-        {
-            JumpLogic();
-        }
-
-        HandleAnimations();
-    }
-
-    void FixedUpdate()
-    {
-        MoveLogic();
-    }
-
-    void MoveLogic()
-    {
+        // 1. حركة القائد
         float h = Input.GetAxis("Horizontal");
         float v = Input.GetAxis("Vertical");
-        bool isRunning = Input.GetKey(KeyCode.LeftShift) && v > 0.1f;
-        float speed = isRunning ? runSpeed : walkSpeed;
+        bool run = Input.GetKey(KeyCode.LeftShift);
+        bool jump = Input.GetButtonDown("Jump");
 
-        // --- حساب الحركة للاعب الحقيقي ---
-        // لو إحنا مش في وضع الضل: يمشي عادي. لو في وضع الضل: يمشي عكس الـ H
-        float realH = isShadowActive ? -h : h;
-        Vector3 realDir = (realPlayer.forward * v + realPlayer.right * realH).normalized;
-        realRB.linearVelocity = new Vector3(realDir.x * speed, realRB.linearVelocity.y, realDir.z * speed);
+        MoveCC(leader, leaderAnim, h, v, run, jump, ref (isShadowActive ? ref shadowYV : ref realYV));
 
-        // --- حساب الحركة للاعب الضل ---
-        // لو إحنا في وضع الضل: يمشي عادي. لو في وضع الحقيقة: يمشي عكس الـ H
-        float shadowH = isShadowActive ? h : -h;
-        Vector3 shadowDir = (shadowPlayer.forward * v + shadowPlayer.right * shadowH).normalized;
-        shadowRB.linearVelocity = new Vector3(shadowDir.x * speed, shadowRB.linearVelocity.y, shadowDir.z * speed);
-    }
+        // 2. تسجيل الأوامر
+        history.Enqueue(new Command { h = h, v = v, run = run, jump = jump, rot = leader.transform.rotation, time = Time.time });
 
-    void SwitchPlayer()
-    {
-        isShadowActive = !isShadowActive;
-        // هنا الكاميرا هتنقل مكانها (هنطور دي دلوقت)
-        Debug.Log(isShadowActive ? "التحكم في الضل" : "التحكم في الحقيقي");
-    }
-
-    void JumpLogic()
-    {
-        // بيفحص مين اللي واقف على الأرض وينططه
-        if (!isShadowActive && IsGrounded(realPlayer))
+        // 3. منطق التابع
+        if (isRecalling && !isShadowActive)
         {
-            realRB.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
-            realAnim.Play("Jump_Up", 0, 0);
+            HandleRecallLogic();
         }
-        else if (isShadowActive && IsGrounded(shadowPlayer))
+        else if (isFrozen && !isShadowActive)
         {
-            shadowRB.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
-            shadowAnim.Play("Jump_Up", 0, 0);
+            ApplyStaticPhysics(follower, ref shadowYV, followerAnim);
+            while (history.Count > 0 && Time.time > history.Peek().time + followDelay) history.Dequeue();
+        }
+        else
+        {
+            ExecuteDelayedMovement(follower, followerAnim, ref (isShadowActive ? ref realYV : ref shadowYV));
         }
     }
 
-    bool IsGrounded(Transform t)
+    void MoveCC(CharacterController cc, Animator anim, float h, float v, bool run, bool jump, ref float yV)
     {
-        return Physics.Raycast(t.position + Vector3.up * 0.1f, Vector3.down, 0.6f, groundMask);
+        if (!cc.enabled) return;
+
+        float s = run ? runSpeed : walkSpeed;
+        Vector3 m = (cc.transform.forward * v + cc.transform.right * h).normalized * s;
+
+        if (cc.isGrounded)
+        {
+            yV = -2f; // تثبيت على الأرض
+            if (jump) { yV = jumpForce; anim.CrossFadeInFixedTime(run ? "Jump_Run" : "Jump_Up", 0.1f); }
+        }
+        else
+        {
+            yV -= gravity * Time.deltaTime;
+        }
+
+        m.y = yV;
+        cc.Move(m * Time.deltaTime);
+        UpdateAnimator(anim, h, v, run, cc.isGrounded);
+    }
+
+    void ExecuteDelayedMovement(CharacterController cc, Animator anim, ref float yV)
+    {
+        while (history.Count > 0 && Time.time >= history.Peek().time + followDelay)
+        {
+            Command c = history.Dequeue();
+            cc.transform.rotation = c.rot;
+            MoveCC(cc, anim, c.h, c.v, c.run, c.jump, ref yV);
+        }
+    }
+
+    void HandleRecallLogic()
+    {
+        float d = Vector3.Distance(shadowCC.transform.position, realCC.transform.position);
+        if (d > 1.5f)
+        {
+            Vector3 dir = (realCC.transform.position - shadowCC.transform.position).normalized;
+            shadowCC.Move(dir * 15f * Time.deltaTime);
+            shadowCC.transform.rotation = Quaternion.Slerp(shadowCC.transform.rotation, realCC.transform.rotation, Time.deltaTime * 10f);
+            UpdateAnimator(shadowAnim, 0, 1, true, true);
+        }
+        else
+        {
+            // حل نهائي لرعشة وصول الـ R: تثبيت الموضع تماماً
+            isRecalling = false;
+            history.Clear();
+            shadowCC.enabled = false;
+            shadowCC.transform.position = realCC.transform.position; // Snap فوري
+            shadowCC.enabled = true;
+        }
+    }
+
+    void UpdateAnimator(Animator a, float h, float v, bool run, bool ground)
+    {
+        if (a == null) return;
+        bool move = Mathf.Abs(h) > 0.1f || Mathf.Abs(v) > 0.1f;
+
+        a.SetBool("isGrounded", ground);
+        a.SetBool("isMoving", move);
+
+        // تصفير كل الحالات قبل التفعيل (عشان م يحصلش تداخل)
+        a.SetBool("iswalking", false);
+        a.SetBool("isrunning", false);
+        a.SetBool("isWalkingBack", false);
+        a.SetBool("isWalkingRight", false);
+        a.SetBool("isWalkingLeft", false);
+
+        if (move && ground)
+        {
+            // منطق الأولوية: لو ماشيين يمين أو شمال، شغلهم هم الأول
+            if (Mathf.Abs(h) > Mathf.Abs(v))
+            {
+                if (h > 0.1f) a.SetBool("isWalkingRight", true);
+                else a.SetBool("isWalkingLeft", true);
+            }
+            else
+            {
+                if (v < -0.1f) a.SetBool("isWalkingBack", true);
+                else if (run && v > 0.1f) a.SetBool("isrunning", true);
+                else a.SetBool("iswalking", true);
+            }
+        }
+    }
+
+    void ApplyStaticPhysics(CharacterController cc, ref float yV, Animator a)
+    {
+        yV = cc.isGrounded ? -2f : yV - gravity * Time.deltaTime;
+        cc.Move(new Vector3(0, yV, 0) * Time.deltaTime);
+        UpdateAnimator(a, 0, 0, false, cc.isGrounded);
+    }
+
+    void HandleInput()
+    {
+        if (Input.GetKeyDown(switchKey)) { isShadowActive = !isShadowActive; history.Clear(); UpdateVisuals(); }
+        if (!isShadowActive)
+        {
+            if (Input.GetKeyDown(freezeKey)) { isFrozen = !isFrozen; }
+            if (Input.GetKeyDown(recallKey)) { isRecalling = true; isFrozen = false; }
+        }
     }
 
     void HandleMouseLook()
     {
-        float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity * Time.deltaTime;
-        float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity * Time.deltaTime;
-        xRotation -= mouseY;
-        xRotation = Mathf.Clamp(xRotation, -80f, 80f);
-        playerCamera.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
-
-        // الماوس بيلف الشخصيتين مع بعض دايماً
-        realPlayer.Rotate(Vector3.up * mouseX);
-        shadowPlayer.Rotate(Vector3.up * mouseX);
+        float mX = Input.GetAxis("Mouse X") * mouseSensitivity * Time.deltaTime;
+        float mY = Input.GetAxis("Mouse Y") * mouseSensitivity * Time.deltaTime;
+        xRotation = Mathf.Clamp(xRotation - mY, -80f, 80f);
+        Transform c = isShadowActive ? shadowCamera.transform : realCamera.transform;
+        c.localRotation = Quaternion.Euler(xRotation, 0, 0);
+        CharacterController l = isShadowActive ? shadowCC : realCC;
+        l.transform.Rotate(Vector3.up * mX);
     }
 
-    void HandleAnimations()
+    void UpdateVisuals()
     {
-        float h = Input.GetAxis("Horizontal");
-        float v = Input.GetAxis("Vertical");
-        bool moving = (Mathf.Abs(h) > 0.1f || Mathf.Abs(v) > 0.1f);
-
-        // ربط الأنيميشن للاثنين (بالأسماء اللي كانت شغالة معاك)
-        UpdateAnim(realAnim, h, v, moving);
-        UpdateAnim(shadowAnim, h, v, moving);
-    }
-
-    void UpdateAnim(Animator a, float h, float v, bool moving)
-    {
-        a.SetBool("isMoving", moving);
-        a.SetBool("iswalking", moving && !Input.GetKey(KeyCode.LeftShift));
-        a.SetBool("isrunning", moving && Input.GetKey(KeyCode.LeftShift));
-        // ملحوظة: الاتجاهات في الضل هتشتغل برضه أوتوماتيك لأننا بنبعت الـ h و v
+        realCamera.SetActive(!isShadowActive); shadowCamera.SetActive(isShadowActive);
+        if (shadowVolume) shadowVolume.weight = isShadowActive ? 1 : 0;
     }
 }
