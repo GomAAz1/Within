@@ -5,6 +5,8 @@ TagManager:
   serializedVersion: 3
   tags:
   - Interactable
+  - ShadowPlayer
+  - Laser
   layers:
   - Default
   - TransparentFX
@@ -13,8 +15,8 @@ TagManager:
   - Water
   - UI
   - Interactable
-  - 
-  - 
+  - RealPlayer
+  - ShadowPlayer
   - 
   - 
   - 

@@ -11,7 +11,7 @@ public class TVMonsterHead : MonoBehaviour
     public float baseSpeed = 0.5f;
     public float pauseDuration = 5f;
     public float lookDownAngle = 50f;
-    public float transitionSpeed = 2f; // سرعة "الصحية" و "النومة"
+    public float transitionSpeed = 2f;
 
     [Header("Randomness & Center Bias")]
     public bool useRandomMovement = true;
@@ -38,8 +38,6 @@ public class TVMonsterHead : MonoBehaviour
     {
         currentSpeed = baseSpeed;
         noiseOffset = Random.Range(0, 1000);
-
-        // بنبدأ اللعبة بوضع الراحة
         transform.localRotation = Quaternion.Euler(lookDownAngle, 0, 0);
         StartCoroutine(InitialStartRoutine());
     }
@@ -49,16 +47,10 @@ public class TVMonsterHead : MonoBehaviour
         isInitialWaiting = true;
         if (lightBeam) lightBeam.SetActive(false);
         if (spotLight) spotLight.enabled = false;
-
         yield return new WaitForSeconds(startDelay);
-
-        // "الصحية" بنعومة
         yield return StartCoroutine(MoveHeadToPosition(lookDownAngle, 0));
-
-        // شغل النور وابدأ المسح
         if (lightBeam) lightBeam.SetActive(true);
         if (spotLight) spotLight.enabled = true;
-
         isInitialWaiting = false;
         isScanning = true;
     }
@@ -69,7 +61,6 @@ public class TVMonsterHead : MonoBehaviour
 
         movementTimer += Time.deltaTime * currentSpeed;
 
-        // الحركة العشوائية المطورة
         float rawYaw = (Mathf.PingPong(movementTimer, 4f) - 2f) * (horizontalRange / 2f);
         float yaw = Mathf.Lerp(rawYaw, 0, centerBias);
         float pitch = lookDownAngle;
@@ -82,55 +73,36 @@ public class TVMonsterHead : MonoBehaviour
             pitch += noiseY * pitchNoiseAmount;
         }
 
-        // تطبيق الحركة بسلاسة
         Quaternion targetRot = Quaternion.Euler(pitch, yaw, 0);
         transform.localRotation = Quaternion.Slerp(transform.localRotation, targetRot, Time.deltaTime * 5f);
 
-        // عداد المسحات
         if (movementTimer >= 8f)
-        { // دورة كاملة
+        {
             movementTimer = 0;
             scanCycles++;
-            if (scanCycles >= 3)
-            {
-                StartCoroutine(TransitionToSleep());
-            }
+            if (scanCycles >= 3) StartCoroutine(TransitionToSleep());
         }
 
         CheckForPlayers();
     }
 
-    // كوروتين العودة للنوم بنعومة
     IEnumerator TransitionToSleep()
     {
         isScanning = false;
-        Debug.Log("الوحش بيبدأ ينام...");
-
-        // العودة للسنتر بنعومة قبل إطفاء النور
         yield return StartCoroutine(MoveHeadToPosition(lookDownAngle, 0));
-
-        // اطفي النور بعد ما يوصل للسنتر
         if (lightBeam) lightBeam.SetActive(false);
         if (spotLight) spotLight.enabled = false;
-
         yield return new WaitForSeconds(pauseDuration);
-
-        // يرجع يصحى تاني
         currentSpeed += 0.1f;
         if (currentSpeed > 1.5f) currentSpeed = baseSpeed;
-
-        // "الصحية" التانية
         yield return StartCoroutine(MoveHeadToPosition(lookDownAngle, 0));
-
         if (lightBeam) lightBeam.SetActive(true);
         if (spotLight) spotLight.enabled = true;
-
         scanCycles = 0;
         movementTimer = 0;
         isScanning = true;
     }
 
-    // دالة مساعدة لتحريك الراس لأي زاوية بنعومة
     IEnumerator MoveHeadToPosition(float targetPitch, float targetYaw)
     {
         Quaternion targetRot = Quaternion.Euler(targetPitch, targetYaw, 0);
@@ -144,20 +116,57 @@ public class TVMonsterHead : MonoBehaviour
 
     void CheckForPlayers()
     {
-        RaycastHit hit;
-        if (Physics.Raycast(transform.position, transform.forward, out hit, 200f))
+        if (spotLight == null) return;
+        CheckTarget(player, spotLight.transform);
+        CheckTarget(shadowPlayer, spotLight.transform);
+    }
+
+    void CheckTarget(Transform target, Transform lightDir)
+    {
+        if (target == null) return;
+
+        float distance = Vector3.Distance(lightDir.position, target.position);
+
+        // لو اللاعب في نطاق طول الكشاف
+        if (distance < spotLight.range)
         {
-            if (hit.collider.CompareTag("Player") || hit.collider.CompareTag("ShadowPlayer"))
+            Vector3 directionToTarget = (target.position - lightDir.position).normalized;
+
+            // حساب الزاوية بين وش الكشاف ومكان اللاعب
+            float angle = Vector3.Angle(lightDir.forward, directionToTarget);
+
+            // --- العودة للدقة الأصلية ---
+            // بنقسم الـ 8.22 على 2 عشان نجيب زاوية الميل من النص
+            float detectionAngle = spotLight.spotAngle / 2f;
+
+            if (angle < detectionAngle)
             {
-                ResetPlayers();
+                RaycastHit hit;
+                // بنبدأ الشعاع من قدام اللمبة بـ 2 متر عشان م يخبطش في الوحش نفسه
+                Vector3 rayStart = lightDir.position + lightDir.forward * 2f;
+
+                if (Physics.Raycast(rayStart, directionToTarget, out hit, distance))
+                {
+                    if (hit.collider.CompareTag("Player") || hit.collider.CompareTag("ShadowPlayer"))
+                    {
+                        ResetPlayers();
+                    }
+                }
             }
         }
     }
 
     void ResetPlayers()
     {
+        Debug.Log("تم رصد اللاعب! إعادة ضبط المرحلة...");
         if (player != null) Teleport(player);
         if (shadowPlayer != null) Teleport(shadowPlayer);
+
+        LaserSwitch[] allSwitches = FindObjectsOfType<LaserSwitch>(true);
+        foreach (LaserSwitch s in allSwitches)
+        {
+            if (s.targetLaser != null) s.targetLaser.SetActive(true);
+        }
     }
 
     void Teleport(Transform target)

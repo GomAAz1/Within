@@ -2,36 +2,27 @@ using UnityEngine;
 
 public class LaserSwitch : MonoBehaviour
 {
-    [Header("Settings")]
-    public GameObject targetLaser; // اسحب الليزر اللي عايز تطفيه هنا
-    public Color activeColor = Color.green;
-    private Color originalColor;
-    private MeshRenderer renderer;
+    [Header("الروابط")]
+    public GameObject targetLaser; // اسحب شريط الليزر الأحمر من الهيراركي هنا
 
-    void Start()
-    {
-        renderer = GetComponent<MeshRenderer>();
-        if (renderer) originalColor = renderer.material.color;
-    }
-
-    // لما اللاعب يقف على الزرار
     private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Player") || other.CompareTag("ShadowPlayer"))
+        // بنختبر لو الضل هو اللي لمس "الزرار"
+        if (other.CompareTag("ShadowPlayer"))
         {
-            targetLaser.SetActive(false); // الليزر المربوط بالزرار ده بس هو اللي يختفي
-            if (renderer) renderer.material.color = activeColor;
-            Debug.Log("تم تعطيل الليزر المربوط!");
-        }
-    }
+            if (targetLaser != null)
+            {
+                targetLaser.SetActive(false); // إخفاء الليزر تماماً
+                Debug.Log("!!! زرار الليزر اشتغل والضل طفاه دلوقت !!!");
 
-    // لما اللاعب يسيب الزرار ويمشي (اختياري: لو عايز الليزر يرجع تاني)
-    private void OnTriggerExit(Collider other)
-    {
-        if (other.CompareTag("Player") || other.CompareTag("ShadowPlayer"))
-        {
-            targetLaser.SetActive(true); // الليزر يرجع يشتغل لو ساب الزرار
-            if (renderer) renderer.material.color = originalColor;
+                // تغيير لون الزرار للاخضر كدليل
+                if (GetComponent<MeshRenderer>() != null)
+                    GetComponent<MeshRenderer>().material.color = Color.green;
+            }
+            else
+            {
+                Debug.LogError("يا معلم أنت مش ساحب الليزر في خانة Target Laser في الزرار!");
+            }
         }
     }
 }

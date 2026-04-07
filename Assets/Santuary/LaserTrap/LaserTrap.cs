@@ -2,34 +2,38 @@ using UnityEngine;
 
 public class LaserTrap : MonoBehaviour
 {
-    public Transform startPoint; // اسحب نقطة البداية هنا
+    public Transform startPoint;
 
-    // الدالة دي بتشتغل أول ما حد يلمس الليزر
     private void OnTriggerEnter(Collider other)
     {
-        // 1. لو اللي لمس الليزر هو "اللاعب الحقيقي"
+        // اللاعب الحقيقي بس هو اللي بيموت
         if (other.CompareTag("Player"))
         {
-            Debug.Log("اللاعب الحقيقي لمس الليزر! عودة للبداية");
-            ResetCharacter(other.gameObject);
-        }
-
-        // 2. لو اللي لمسه هو "الظل"
-        if (other.CompareTag("ShadowPlayer"))
-        {
-            // هنا ممكن تقرر: هل الظل بيموت ولا بيعدي؟
-            // لو عايزه "يعدي عادي"، سيب الحتة دي فاضية وماتكتبش حاجة.
-            Debug.Log("الظل عدى بسلام من الليزر");
+            Debug.Log("اللاعب الحقيقي مات! ريستارت للكل...");
+            ResetEverything();
         }
     }
 
-    void ResetCharacter(GameObject character)
+    void ResetEverything()
     {
-        CharacterController cc = character.GetComponent<CharacterController>();
-        if (cc != null) cc.enabled = false; // قفل الفيزيا ثانية
+        // 1. تشغيل كل الليزرات اللي اتقفلت
+        LaserSwitch[] allSwitches = FindObjectsOfType<LaserSwitch>();
+        foreach (LaserSwitch s in allSwitches)
+        {
+            if (s.targetLaser != null) s.targetLaser.SetActive(true);
+        }
 
-        character.transform.position = startPoint.position;
+        // 2. تليبورت للاعبين
+        Teleport(GameObject.FindWithTag("Player"));
+        Teleport(GameObject.FindWithTag("ShadowPlayer"));
+    }
 
-        if (cc != null) cc.enabled = true; // رجع الفيزيا
+    void Teleport(GameObject go)
+    {
+        if (go == null) return;
+        CharacterController cc = go.GetComponent<CharacterController>();
+        if (cc != null) cc.enabled = false;
+        go.transform.position = startPoint.position;
+        if (cc != null) cc.enabled = true;
     }
 }
