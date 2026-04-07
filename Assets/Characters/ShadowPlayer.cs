@@ -15,7 +15,6 @@ public class ShadowPlayer : MonoBehaviour
     [Header("Characters Setup")]
     public CharacterController realCC;
     public CharacterController shadowCC;
-    public GameObject realCamera, shadowCamera;
     public Volume shadowVolume;
 
     [Header("Keys & Settings")]
@@ -26,15 +25,13 @@ public class ShadowPlayer : MonoBehaviour
     public float walkSpeed = 5f;
     public float runSpeed = 10f;
     public float jumpForce = 8f;
-    public float gravity = 30f; // زودنا الجاذبية للثبات
-    public float mouseSensitivity = 200f;
+    public float gravity = 30f;
 
     private Queue<Command> history = new Queue<Command>();
     private Animator realAnim, shadowAnim;
     private bool isShadowActive = false;
     private bool isFrozen = false;
     private bool isRecalling = false;
-    private float xRotation = 0f;
     private float realYV = -2f, shadowYV = -2f;
 
     void Start()
@@ -42,7 +39,7 @@ public class ShadowPlayer : MonoBehaviour
         realAnim = realCC.GetComponent<Animator>();
         shadowAnim = shadowCC.GetComponent<Animator>();
 
-        // منع جليتش البداية: تعطيل مؤقت ثم تفعيل
+        // منع جليتش البداية
         StartCoroutine(StartPhysicsSafety());
 
         Cursor.lockState = CursorLockMode.Locked;
@@ -59,7 +56,6 @@ public class ShadowPlayer : MonoBehaviour
     void Update()
     {
         HandleInput();
-        HandleMouseLook();
 
         CharacterController leader = isShadowActive ? shadowCC : realCC;
         Animator leaderAnim = isShadowActive ? shadowAnim : realAnim;
@@ -98,11 +94,13 @@ public class ShadowPlayer : MonoBehaviour
         if (!cc.enabled) return;
 
         float s = run ? runSpeed : walkSpeed;
+
+        // الحركة هنا تعتمد على اتجاه اللاعب الحالي (الذي سيتم تدويره بواسطة سكريبت الكاميرا لاحقاً)
         Vector3 m = (cc.transform.forward * v + cc.transform.right * h).normalized * s;
 
         if (cc.isGrounded)
         {
-            yV = -2f; // تثبيت على الأرض
+            yV = -2f;
             if (jump) { yV = jumpForce; anim.CrossFadeInFixedTime(run ? "Jump_Run" : "Jump_Up", 0.1f); }
         }
         else
@@ -137,11 +135,10 @@ public class ShadowPlayer : MonoBehaviour
         }
         else
         {
-            // حل نهائي لرعشة وصول الـ R: تثبيت الموضع تماماً
             isRecalling = false;
             history.Clear();
             shadowCC.enabled = false;
-            shadowCC.transform.position = realCC.transform.position; // Snap فوري
+            shadowCC.transform.position = realCC.transform.position;
             shadowCC.enabled = true;
         }
     }
@@ -154,7 +151,6 @@ public class ShadowPlayer : MonoBehaviour
         a.SetBool("isGrounded", ground);
         a.SetBool("isMoving", move);
 
-        // تصفير كل الحالات قبل التفعيل (عشان م يحصلش تداخل)
         a.SetBool("iswalking", false);
         a.SetBool("isrunning", false);
         a.SetBool("isWalkingBack", false);
@@ -163,7 +159,6 @@ public class ShadowPlayer : MonoBehaviour
 
         if (move && ground)
         {
-            // منطق الأولوية: لو ماشيين يمين أو شمال، شغلهم هم الأول
             if (Mathf.Abs(h) > Mathf.Abs(v))
             {
                 if (h > 0.1f) a.SetBool("isWalkingRight", true);
@@ -195,20 +190,11 @@ public class ShadowPlayer : MonoBehaviour
         }
     }
 
-    void HandleMouseLook()
-    {
-        float mX = Input.GetAxis("Mouse X") * mouseSensitivity * Time.deltaTime;
-        float mY = Input.GetAxis("Mouse Y") * mouseSensitivity * Time.deltaTime;
-        xRotation = Mathf.Clamp(xRotation - mY, -80f, 80f);
-        Transform c = isShadowActive ? shadowCamera.transform : realCamera.transform;
-        c.localRotation = Quaternion.Euler(xRotation, 0, 0);
-        CharacterController l = isShadowActive ? shadowCC : realCC;
-        l.transform.Rotate(Vector3.up * mX);
-    }
-
     void UpdateVisuals()
     {
-        realCamera.SetActive(!isShadowActive); shadowCamera.SetActive(isShadowActive);
         if (shadowVolume) shadowVolume.weight = isShadowActive ? 1 : 0;
     }
+
+    // لإرسال حالة التحكم للكود الآخر
+    public bool IsShadowActive() { return isShadowActive; }
 }
