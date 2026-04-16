@@ -17,8 +17,8 @@ TagManager:
   - Interactable
   - RealPlayer
   - ShadowPlayer
-  - 
-  - 
+  - VisibleToReal
+  - VisibleToShadow
   - 
   - 
   - 

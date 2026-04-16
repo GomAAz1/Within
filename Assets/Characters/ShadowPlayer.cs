@@ -17,6 +17,10 @@ public class ShadowPlayer : MonoBehaviour
     public CharacterController shadowCC;
     public Volume shadowVolume;
 
+    [Header("Visibility Layers (New)")]
+    public LayerMask realMask;   // الطبقات اللي بيشوفها اللاعب الحقيقي
+    public LayerMask shadowMask; // الطبقات اللي بيشوفها الضل
+
     [Header("Keys & Settings")]
     public KeyCode switchKey = KeyCode.Tab;
     public KeyCode freezeKey = KeyCode.F;
@@ -95,7 +99,6 @@ public class ShadowPlayer : MonoBehaviour
 
         float s = run ? runSpeed : walkSpeed;
 
-        // الحركة هنا تعتمد على اتجاه اللاعب الحالي (الذي سيتم تدويره بواسطة سكريبت الكاميرا لاحقاً)
         Vector3 m = (cc.transform.forward * v + cc.transform.right * h).normalized * s;
 
         if (cc.isGrounded)
@@ -192,9 +195,15 @@ public class ShadowPlayer : MonoBehaviour
 
     void UpdateVisuals()
     {
+        // 1. الضلمة
         if (shadowVolume) shadowVolume.weight = isShadowActive ? 1 : 0;
+
+        // 2. تصفية الرؤية (إظهار وإخفاء المفاتيح)
+        if (Camera.main != null)
+        {
+            Camera.main.cullingMask = isShadowActive ? shadowMask : realMask;
+        }
     }
 
-    // لإرسال حالة التحكم للكود الآخر
     public bool IsShadowActive() { return isShadowActive; }
 }
