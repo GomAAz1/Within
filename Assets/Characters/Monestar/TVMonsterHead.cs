@@ -1,179 +1,184 @@
 using UnityEngine;
+using UnityEngine.UI;
 using System.Collections;
+using System.Collections.Generic;
 
 public class TVMonsterHead : MonoBehaviour
 {
-    [Header("Start Settings")]
-    public float startDelay = 10f;
+    [Header("1. Start Settings")]
+    public float startDelay = 10f; // هينتظر 10 ثواني في الأول
 
-    [Header("Patrol Settings")]
+    [Header("2. Patrol Settings (PingPong)")]
     public float horizontalRange = 60f;
     public float baseSpeed = 0.5f;
-    public float pauseDuration = 5f;
-    public float lookDownAngle = 50f;
+    public float lookDownAngle = 45f;
     public float transitionSpeed = 2f;
 
-    [Header("Randomness & Center Bias")]
-    public bool useRandomMovement = true;
-    public float randomnessSpeed = 0.8f;
-    public float yawNoiseAmount = 25f;
-    public float pitchNoiseAmount = 15f;
-    [Range(0, 1)] public float centerBias = 0.4f;
+    [Header("3. Catch & Follow Sequence")]
+    public float detectionAngle = 8.22f; // الزاوية اللي طلبتها
+    public float detectionRange = 100f;
+    public float trackingDuration = 5f;
+    public float trackingSpeed = 10f;
+    [Range(0, 360)] public float modelRotationOffset = 180f; // عشان لو بص وراه
 
-    [Header("References")]
+    [Header("4. Visuals & UI")]
     public GameObject lightBeam;
     public Light spotLight;
-    public Transform player;
-    public Transform shadowPlayer;
-    public Transform startPoint;
+    public Material lightBeamMaterial;
+    public Color normalColor = Color.white;
+    public Color alertColor = Color.red;
+    public Image redFadeImage;
+    public float fadeDuration = 0.5f;
 
-    private float currentSpeed;
-    private int scanCycles = 0;
-    private bool isScanning = false;
-    private bool isInitialWaiting = true;
-    private float movementTimer = 0f;
-    private float noiseOffset;
+    [Header("5. Sounds & References")]
+    public AudioSource screamAudio;
+    public AudioSource scanningSound;
+    public Transform player, shadowPlayer, startPoint;
+
+    private float currentSpeed, movementTimer, noiseOffset;
+    private bool isScanning = false, isCaught = false, isInitialWaiting = true;
+    private Color originalLightColor;
 
     void Start()
     {
-        currentSpeed = baseSpeed;
-        noiseOffset = Random.Range(0, 1000);
-        transform.localRotation = Quaternion.Euler(lookDownAngle, 0, 0);
+        if (spotLight) originalLightColor = spotLight.color;
+        noiseOffset = Random.Range(0f, 1000f);
+
+        // تصفير الحالة في البداية
+        isScanning = false; isCaught = false;
+        SetLights(false);
+        if (redFadeImage) { redFadeImage.color = new Color(1, 0, 0, 0); redFadeImage.gameObject.SetActive(false); }
+
         StartCoroutine(InitialStartRoutine());
     }
 
     IEnumerator InitialStartRoutine()
     {
         isInitialWaiting = true;
-        if (lightBeam) lightBeam.SetActive(false);
-        if (spotLight) spotLight.enabled = false;
         yield return new WaitForSeconds(startDelay);
-        yield return StartCoroutine(MoveHeadToPosition(lookDownAngle, 0));
-        if (lightBeam) lightBeam.SetActive(true);
-        if (spotLight) spotLight.enabled = true;
+
+        SetLights(true);
+        UpdateColors(normalColor);
+        if (scanningSound) scanningSound.Play();
+
         isInitialWaiting = false;
         isScanning = true;
+        movementTimer = 0;
     }
 
     void Update()
     {
-        if (isInitialWaiting || !isScanning) return;
+        if (isInitialWaiting || isCaught || !isScanning) return;
 
-        movementTimer += Time.deltaTime * currentSpeed;
+        movementTimer += Time.deltaTime * baseSpeed;
 
-        float rawYaw = (Mathf.PingPong(movementTimer, 4f) - 2f) * (horizontalRange / 2f);
-        float yaw = Mathf.Lerp(rawYaw, 0, centerBias);
-        float pitch = lookDownAngle;
+        // حركة المسح الطبيعية (PingPong)
+        float yaw = (Mathf.PingPong(movementTimer, 4f) - 2f) * (horizontalRange / 2f);
 
-        if (useRandomMovement)
-        {
-            float noiseX = (Mathf.PerlinNoise(Time.time * randomnessSpeed + noiseOffset, 0) - 0.5f) * 2f;
-            float noiseY = (Mathf.PerlinNoise(0, Time.time * randomnessSpeed + noiseOffset) - 0.5f) * 2f;
-            yaw += noiseX * yawNoiseAmount;
-            pitch += noiseY * pitchNoiseAmount;
-        }
-
-        Quaternion targetRot = Quaternion.Euler(pitch, yaw, 0);
-        transform.localRotation = Quaternion.Slerp(transform.localRotation, targetRot, Time.deltaTime * 5f);
-
-        if (movementTimer >= 8f)
-        {
-            movementTimer = 0;
-            scanCycles++;
-            if (scanCycles >= 3) StartCoroutine(TransitionToSleep());
-        }
+        // تطبيق الحركة محلياً لضمان عدم الشقلبة
+        transform.localRotation = Quaternion.Euler(lookDownAngle, yaw, 0);
 
         CheckForPlayers();
     }
 
-    IEnumerator TransitionToSleep()
-    {
-        isScanning = false;
-        yield return StartCoroutine(MoveHeadToPosition(lookDownAngle, 0));
-        if (lightBeam) lightBeam.SetActive(false);
-        if (spotLight) spotLight.enabled = false;
-        yield return new WaitForSeconds(pauseDuration);
-        currentSpeed += 0.1f;
-        if (currentSpeed > 1.5f) currentSpeed = baseSpeed;
-        yield return StartCoroutine(MoveHeadToPosition(lookDownAngle, 0));
-        if (lightBeam) lightBeam.SetActive(true);
-        if (spotLight) spotLight.enabled = true;
-        scanCycles = 0;
-        movementTimer = 0;
-        isScanning = true;
-    }
-
-    IEnumerator MoveHeadToPosition(float targetPitch, float targetYaw)
-    {
-        Quaternion targetRot = Quaternion.Euler(targetPitch, targetYaw, 0);
-        while (Quaternion.Angle(transform.localRotation, targetRot) > 0.1f)
-        {
-            transform.localRotation = Quaternion.Slerp(transform.localRotation, targetRot, Time.deltaTime * transitionSpeed);
-            yield return null;
-        }
-        transform.localRotation = targetRot;
-    }
-
     void CheckForPlayers()
     {
-        if (spotLight == null) return;
-        CheckTarget(player, spotLight.transform);
-        CheckTarget(shadowPlayer, spotLight.transform);
+        if (spotLight == null || isCaught) return;
+        CheckTarget(player);
+        CheckTarget(shadowPlayer);
     }
 
-    void CheckTarget(Transform target, Transform lightDir)
+    void CheckTarget(Transform target)
     {
         if (target == null) return;
-
-        float distance = Vector3.Distance(lightDir.position, target.position);
-
-        // لو اللاعب في نطاق طول الكشاف
-        if (distance < spotLight.range)
+        float dist = Vector3.Distance(spotLight.transform.position, target.position);
+        if (dist < detectionRange)
         {
-            Vector3 directionToTarget = (target.position - lightDir.position).normalized;
-
-            // حساب الزاوية بين وش الكشاف ومكان اللاعب
-            float angle = Vector3.Angle(lightDir.forward, directionToTarget);
-
-            // --- العودة للدقة الأصلية ---
-            // بنقسم الـ 8.22 على 2 عشان نجيب زاوية الميل من النص
-            float detectionAngle = spotLight.spotAngle / 2f;
-
-            if (angle < detectionAngle)
+            Vector3 dir = (target.position - spotLight.transform.position).normalized;
+            if (Vector3.Angle(spotLight.transform.forward, dir) < detectionAngle / 2f)
             {
-                RaycastHit hit;
-                // بنبدأ الشعاع من قدام اللمبة بـ 2 متر عشان م يخبطش في الوحش نفسه
-                Vector3 rayStart = lightDir.position + lightDir.forward * 2f;
-
-                if (Physics.Raycast(rayStart, directionToTarget, out hit, distance))
-                {
-                    if (hit.collider.CompareTag("Player") || hit.collider.CompareTag("ShadowPlayer"))
-                    {
-                        ResetPlayers();
-                    }
-                }
+                StartCoroutine(TheKillerCatchSequence(target));
             }
         }
     }
 
-    void ResetPlayers()
+    IEnumerator TheKillerCatchSequence(Transform target)
     {
-        Debug.Log("تم رصد اللاعب! إعادة ضبط المرحلة...");
+        isCaught = true;
+        isScanning = false;
+        if (scanningSound) scanningSound.Stop();
+
+        // 1. صرخة الرعب واللون الأحمر فوراً
+        if (screamAudio) { screamAudio.volume = 1f; screamAudio.Play(); }
+        UpdateColors(alertColor);
+
+        // 2. المطاردة بالعين (5 ثواني) - مستحيل يهرب منك
+        float t = 0;
+        while (t < trackingDuration)
+        {
+            t += Time.deltaTime;
+            Vector3 targetDir = target.position - transform.position;
+            if (targetDir != Vector3.zero)
+            {
+                Quaternion lookRot = Quaternion.LookRotation(targetDir);
+                lookRot *= Quaternion.Euler(0, modelRotationOffset, 0); // تصحيح الوش
+                transform.rotation = Quaternion.Slerp(transform.rotation, lookRot, Time.deltaTime * trackingSpeed);
+            }
+            yield return null;
+        }
+
+        // 3. الفيد الأحمر
+        if (redFadeImage) redFadeImage.gameObject.SetActive(true);
+        float f = 0;
+        while (f < 1) { f += Time.deltaTime * 2; redFadeImage.color = new Color(1, 0, 0, f); yield return null; }
+
+        // 4. النقل وتصفير الماب
+        ResetEverything();
+
+        // 5. كسر اللوب: رجع الدماغ للنص فوراً وهي سودة
+        transform.localRotation = Quaternion.Euler(lookDownAngle, 0, 0);
+
+        yield return new WaitForSeconds(1f);
+
+        // 6. تفتيح الشاشة والعودة للبداية (10 ثواني انتظار)
+        UpdateColors(normalColor);
+        while (f > 0) { f -= Time.deltaTime * 1.5f; redFadeImage.color = new Color(1, 0, 0, f); yield return null; }
+        if (redFadeImage) redFadeImage.gameObject.SetActive(false);
+
+        isCaught = false;
+        StartCoroutine(InitialStartRoutine()); // يرجع ينتظر الـ 10 ثواني تانى
+    }
+
+    void ResetEverything()
+    {
         if (player != null) Teleport(player);
         if (shadowPlayer != null) Teleport(shadowPlayer);
 
-        LaserSwitch[] allSwitches = FindObjectsOfType<LaserSwitch>(true);
-        foreach (LaserSwitch s in allSwitches)
-        {
-            if (s.targetLaser != null) s.targetLaser.SetActive(true);
-        }
+        LaserSwitch[] sw = FindObjectsOfType<LaserSwitch>(true);
+        foreach (LaserSwitch s in sw) if (s.targetLaser != null) s.targetLaser.SetActive(true);
     }
 
-    void Teleport(Transform target)
+    void Teleport(Transform t)
     {
-        CharacterController cc = target.GetComponent<CharacterController>();
+        CharacterController cc = t.GetComponent<CharacterController>();
         if (cc != null) cc.enabled = false;
-        target.position = startPoint.position;
+        t.position = startPoint.position;
         if (cc != null) cc.enabled = true;
+    }
+
+    void SetLights(bool state)
+    {
+        if (lightBeam) lightBeam.SetActive(state);
+        if (spotLight) spotLight.enabled = state;
+    }
+
+    void UpdateColors(Color c)
+    {
+        if (spotLight) spotLight.color = c;
+        if (lightBeamMaterial)
+        {
+            lightBeamMaterial.SetColor("_BaseColor", c);
+            lightBeamMaterial.SetColor("_EmissionColor", c * 15f);
+        }
     }
 }
