@@ -6,24 +6,27 @@ public class LaserTrap : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        // اللاعب الحقيقي بس هو اللي بيموت
         if (other.CompareTag("Player"))
         {
-            Debug.Log("اللاعب الحقيقي مات! ريستارت للكل...");
             ResetEverything();
         }
     }
 
     void ResetEverything()
     {
-        // 1. تشغيل كل الليزرات اللي اتقفلت
-        LaserSwitch[] allSwitches = FindObjectsOfType<LaserSwitch>();
-        foreach (LaserSwitch s in allSwitches)
+        // 1. ريست الليزرات + لون السويتش أصفر
+        foreach (LaserSwitch s in FindObjectsOfType<LaserSwitch>(true))
         {
-            if (s.targetLaser != null) s.targetLaser.SetActive(true);
+            if (s.targetLaser != null)
+                s.targetLaser.SetActive(true);
+            s.ResetToYellow();   // ★ يرجع أصفر
         }
 
-        // 2. تليبورت للاعبين
+        // 2. ريست المفاتيح
+        foreach (KeyPickup kp in FindObjectsOfType<KeyPickup>(true))
+            kp.ResetKey();       // ★ يرجع مفتاح الماب ويخفي مفتاح الكرستالة
+
+        // 3. تليبورت اللاعبين
         Teleport(GameObject.FindWithTag("Player"));
         Teleport(GameObject.FindWithTag("ShadowPlayer"));
     }

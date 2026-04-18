@@ -3,26 +3,58 @@ using UnityEngine;
 public class LaserSwitch : MonoBehaviour
 {
     [Header("الروابط")]
-    public GameObject targetLaser; // اسحب شريط الليزر الأحمر من الهيراركي هنا
+    public GameObject targetLaser;
+
+    [Header("Colors (HDR)")]
+    public Color activeGlowColor = Color.green;
+    public Color originalGlowColor = Color.yellow;
+
+    private MeshRenderer switchRenderer;
+    private AudioSource switchAudio;
+    private Material switchMat;
+
+    void Start()
+    {
+        switchRenderer = GetComponent<MeshRenderer>();
+        switchAudio = GetComponent<AudioSource>();
+
+        if (switchRenderer != null)
+        {
+            switchMat = switchRenderer.material;
+            switchMat.EnableKeyword("_EMISSION");
+            ApplyColorAndGlow(originalGlowColor);
+        }
+    }
 
     private void OnTriggerEnter(Collider other)
     {
-        // بنختبر لو الضل هو اللي لمس "الزرار"
         if (other.CompareTag("ShadowPlayer"))
         {
             if (targetLaser != null)
             {
-                targetLaser.SetActive(false); // إخفاء الليزر تماماً
-                Debug.Log("!!! زرار الليزر اشتغل والضل طفاه دلوقت !!!");
+                bool isNowActive = !targetLaser.activeSelf;
+                targetLaser.SetActive(isNowActive);
 
-                // تغيير لون الزرار للاخضر كدليل
-                if (GetComponent<MeshRenderer>() != null)
-                    GetComponent<MeshRenderer>().material.color = Color.green;
+                if (switchAudio != null) switchAudio.Play();
+
+                Color targetColor = isNowActive ? originalGlowColor : activeGlowColor;
+                ApplyColorAndGlow(targetColor);
             }
-            else
-            {
-                Debug.LogError("يا معلم أنت مش ساحب الليزر في خانة Target Laser في الزرار!");
-            }
+        }
+    }
+
+    // ★★★ الدالة الجديدة - الوحش بيستدعيها عند الريست
+    public void ResetToYellow()
+    {
+        ApplyColorAndGlow(originalGlowColor);
+    }
+
+    void ApplyColorAndGlow(Color clr)
+    {
+        if (switchMat != null)
+        {
+            switchMat.SetColor("_BaseColor", clr);
+            switchMat.SetColor("_EmissionColor", clr * 2f);
         }
     }
 }
