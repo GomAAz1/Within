@@ -14742,26 +14742,46 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TVMonsterHead
   startDelay: 10
   horizontalRange: 45
-  baseSpeed: 0.3
+  baseSpeed: 1.2
+  pauseDuration: 5
   lookDownAngle: -25
   transitionSpeed: 2
-  detectionAngle: 8.22
+  maxScanCycles: 5
+  useRandomMovement: 1
+  randomnessSpeed: 0.8
+  yawNoiseAmount: 25
+  pitchNoiseAmount: 15
+  centerBias: 0.4
+  detectionAngle: 20
   detectionRange: 50
   trackingDuration: 5
   trackingSpeed: 8
-  modelRotationOffset: 180
+  maxTrackingSpeed: 18
+  trackingAcceleration: 2.5
   lightBeam: {fileID: 2093963934}
   spotLight: {fileID: 1571303935}
-  lightBeamMaterial: {fileID: 2100000, guid: 5163ce92afbb129478b63d04515cbe23, type: 2}
-  normalColor: {r: 1, g: 1, b: 1, a: 1}
-  alertColor: {r: 1, g: 0, b: 0, a: 1}
-  redFadeImage: {fileID: 24469816}
-  fadeDuration: 0.5
-  screamAudio: {fileID: 0}
-  scanningSound: {fileID: 0}
   player: {fileID: 223826139}
   shadowPlayer: {fileID: 282053697}
   startPoint: {fileID: 1580855401}
+  headRenderer: {fileID: 921329373446703958}
+  headMaterialIndex: 0
+  headNormalColor: {r: 1, g: 1, b: 1, a: 1}
+  headAlertColor: {r: 1, g: 0, b: 0, a: 1}
+  normalBeamColor: {r: 1, g: 1, b: 1, a: 1}
+  alertBeamColor: {r: 1, g: 0, b: 0, a: 1}
+  lightBeamMaterial: {fileID: 2100000, guid: 5163ce92afbb129478b63d04515cbe23, type: 2}
+  beamScaleX: 0.3
+  beamScaleY: 5
+  beamScaleZ: 0.3
+  beamOffsetX: 0.2
+  beamOffsetY: 0
+  beamOffsetZ: 3
+  lightActivationDelay: 2
+  redFadeImage: {fileID: 24469816}
+  fadeDuration: 0.5
+  wakeUpSound: {fileID: 1994771391}
+  scanningSound: {fileID: 955045629}
+  detectionSound: {fileID: 1496583163}
 --- !u!1001 &585515972
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -24897,7 +24917,7 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 0}
+  m_Resource: {fileID: 8300000, guid: ab855993b72429a40b879b2cdd96e658, type: 3}
   m_PlayOnAwake: 0
   m_Volume: 1
   m_Pitch: 1
@@ -27559,7 +27579,7 @@ Transform:
   m_GameObject: {fileID: 1075768154}
   serializedVersion: 2
   m_LocalRotation: {x: 0.035160597, y: 0.038939837, z: 0.7026439, w: 0.70960486}
-  m_LocalPosition: {x: -11.72, y: 13.62, z: 41.17}
+  m_LocalPosition: {x: -11.72, y: 13.49, z: 41.17}
   m_LocalScale: {x: 0.04, y: 5.4568, z: 0.041352}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -49976,9 +49996,9 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 0}
+  m_Resource: {fileID: 8300000, guid: e51dba8ff365cf64cb045429f3cb1609, type: 3}
   m_PlayOnAwake: 0
-  m_Volume: 1
+  m_Volume: 0.721
   m_Pitch: 1
   Loop: 0
   Mute: 0
@@ -52464,7 +52484,7 @@ Transform:
   m_GameObject: {fileID: 2093963934}
   serializedVersion: 2
   m_LocalRotation: {x: -0.031284124, y: 0.7064144, z: -0.7064144, w: -0.031284124}
-  m_LocalPosition: {x: 1.06, y: 5.07, z: -7.8}
+  m_LocalPosition: {x: 1.018, y: 5.07, z: -7.796}
   m_LocalScale: {x: 0.15, y: 6.5, z: 0.15}
   m_ConstrainProportionsScale: 0
   m_Children: []

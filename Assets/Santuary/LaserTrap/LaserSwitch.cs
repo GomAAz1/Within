@@ -6,7 +6,6 @@ public class LaserSwitch : MonoBehaviour
     public GameObject targetLaser;
 
     [Header("Colors (HDR)")]
-    // نصيحة: اختار ألوان فاقعة جداً من الانسبكتور
     public Color activeGlowColor = Color.green;
     public Color originalGlowColor = Color.yellow;
 
@@ -22,7 +21,6 @@ public class LaserSwitch : MonoBehaviour
         if (switchRenderer != null)
         {
             switchMat = switchRenderer.material;
-            // تفعيل خاصية التوهج في الماتريال برمجياً
             switchMat.EnableKeyword("_EMISSION");
             ApplyColorAndGlow(originalGlowColor);
         }
@@ -39,24 +37,23 @@ public class LaserSwitch : MonoBehaviour
 
                 if (switchAudio != null) switchAudio.Play();
 
-                // تغيير التوهج واللون بناءً على الحالة
                 Color targetColor = isNowActive ? originalGlowColor : activeGlowColor;
                 ApplyColorAndGlow(targetColor);
-
-                Debug.Log(isNowActive ? "الليزر رجع - توهج أصفر" : "الليزر طفى - توهج أخضر");
             }
         }
+    }
+
+    // ★★★ الدالة الجديدة - الوحش بيستدعيها عند الريست
+    public void ResetToYellow()
+    {
+        ApplyColorAndGlow(originalGlowColor);
     }
 
     void ApplyColorAndGlow(Color clr)
     {
         if (switchMat != null)
         {
-            // 1. تغيير اللون الأساسي
             switchMat.SetColor("_BaseColor", clr);
-
-            // 2. تغيير لون التوهج (السر في الـ _EmissionColor)
-            // بنضرب اللون في 2 عشان نخليه "ينور" أكتر في الضلمة
             switchMat.SetColor("_EmissionColor", clr * 2f);
         }
     }
