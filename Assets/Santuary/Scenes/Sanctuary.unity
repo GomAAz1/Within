@@ -17428,7 +17428,7 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 8300000, guid: e5df0eb96a3956d429ce1913cda4ebc9, type: 3}
+  m_Resource: {fileID: 8300000, guid: 89b8147ed1752f14bb764f1bb78e9ddb, type: 3}
   m_PlayOnAwake: 0
   m_Volume: 1
   m_Pitch: 1
@@ -54460,7 +54460,7 @@ PrefabInstance:
     - target: {fileID: 8272839329614782316, guid: 788c48c048c4fae44a6b870d41c16865, type: 3}
       propertyPath: 'footstepClips.Array.data[0]'
       value: 
-      objectReference: {fileID: 8300000, guid: e5df0eb96a3956d429ce1913cda4ebc9, type: 3}
+      objectReference: {fileID: 8300000, guid: 89b8147ed1752f14bb764f1bb78e9ddb, type: 3}
     - target: {fileID: 8272839329614782316, guid: 788c48c048c4fae44a6b870d41c16865, type: 3}
       propertyPath: 'footstepClips.Array.data[1]'
       value: 
@@ -54999,7 +54999,7 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 8300000, guid: e5df0eb96a3956d429ce1913cda4ebc9, type: 3}
+  m_Resource: {fileID: 8300000, guid: 89b8147ed1752f14bb764f1bb78e9ddb, type: 3}
   m_PlayOnAwake: 0
   m_Volume: 1
   m_Pitch: 1
