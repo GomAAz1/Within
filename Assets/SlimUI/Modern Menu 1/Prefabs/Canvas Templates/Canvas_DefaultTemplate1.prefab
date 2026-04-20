@@ -16345,7 +16345,6 @@ GameObject:
   - component: {fileID: 393905815672338038}
   - component: {fileID: 393768894833221070}
   - component: {fileID: 8082573080604997050}
-  - component: {fileID: 887290758500358835}
   m_Layer: 0
   m_Name: Camera
   m_TagString: MainCamera
@@ -16708,18 +16707,6 @@ MonoBehaviour:
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
   m_Version: 2
---- !u!114 &887290758500358835
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 352696004450694496}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 715d1686b4d8a1247958006dc323922c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::CloseMenuScript
 --- !u!1 &352711068421912812
 GameObject:
   m_ObjectHideFlags: 0
@@ -34522,6 +34509,10 @@ PrefabInstance:
       propertyPath: m_Delegates.Array.data[0].callback.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
       objectReference: {fileID: 393194567867878790}
+    - target: {fileID: 5388222474218088325, guid: 817319833dd713d45af5c2121e9649c7, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5388222474218088325, guid: 817319833dd713d45af5c2121e9649c7, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 

@@ -1,55 +1,74 @@
 using UnityEngine;
-using UnityEngine.Playables; // مهم جداً عشان يكلم التايم لاين
+using UnityEngine.Playables;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using System.Collections;
 
 public class CutsceneFinishHandler : MonoBehaviour
 {
-    public PlayableDirector director; // اسحب الاوبجكت اللي عليه التايم لاين هنا
+    [Header("References")]
+    public PlayableDirector director; // اسحب اوبجكت التايم لاين هنا
     public Image fadeImage;           // اسحب الصورة السوداء هنا
-    public string nextSceneName;      // اسم المرحلة اللي هتبدأ بعد الكت سين
+    public string nextSceneName;      // اسم المرحلة الجاية
 
-    private bool hasStartedTransition = false;
+    [Header("Timing Settings")]
+    public float startFadeDuration = 2f; // وقت تفتيح الشاشة في الأول
+    public float endFadeDuration = 2f;   // وقت تسويد الشاشة في الآخر
 
-    void OnEnable()
+    private bool isEnding = false;
+
+    void Start()
     {
-        // بنقول للكود: أول ما التايم لاين يخلص (يتوقف)، نادي الدالة دي
-        director.stopped += OnTimelineStopped;
-    }
-
-    void OnDisable()
-    {
-        director.stopped -= OnTimelineStopped;
-    }
-
-    void OnTimelineStopped(PlayableDirector aDirector)
-    {
-        if (!hasStartedTransition)
+        // 1. نبدأ والشاشة سودة تماماً
+        if (fadeImage != null)
         {
-            StartCoroutine(FadeAndLoadNextScene());
+            fadeImage.gameObject.SetActive(true);
+            fadeImage.color = new Color(0, 0, 0, 1);
+            StartCoroutine(StartSequence());
         }
     }
 
-    IEnumerator FadeAndLoadNextScene()
+    // --- مشهد البداية: تفتيح ثم تشغيل التايم لاين ---
+    IEnumerator StartSequence()
     {
-        hasStartedTransition = true;
-        float duration = 2f; // مدة التسويد
-        float timer = 0;
+        yield return new WaitForSeconds(0.5f); // استراحة بسيطة
 
-        // 1. تسويد الشاشة تدريجياً
-        while (timer < duration)
+        float timer = 0;
+        while (timer < startFadeDuration)
         {
             timer += Time.deltaTime;
-            float alpha = Mathf.Lerp(0, 1, timer / duration);
-            fadeImage.color = new Color(0, 0, 0, alpha);
+            fadeImage.color = new Color(0, 0, 0, Mathf.Lerp(1, 0, timer / startFadeDuration));
             yield return null;
         }
 
-        // 2. انتظار ثانية في السواد (للمود)
-        yield return new WaitForSeconds(1f);
+        // دلوقت بس نفتح التايم لاين
+        if (director != null) director.Play();
+        Debug.Log("الستارة اتفتحت.. ابدأ الفيلم!");
+    }
 
-        // 3. الانتقال للمرحلة الحقيقية
+    // --- مشهد النهاية: لما التايم لاين يخلص ---
+    void OnEnable() { if (director != null) director.stopped += OnTimelineStopped; }
+    void OnDisable() { if (director != null) director.stopped -= OnTimelineStopped; }
+
+    void OnTimelineStopped(PlayableDirector aDirector)
+    {
+        if (!isEnding) StartCoroutine(EndSequence());
+    }
+
+    IEnumerator EndSequence()
+    {
+        isEnding = true;
+        float timer = 0;
+
+        // تسويد الشاشة تاني
+        while (timer < endFadeDuration)
+        {
+            timer += Time.deltaTime;
+            fadeImage.color = new Color(0, 0, 0, Mathf.Lerp(0, 1, timer / endFadeDuration));
+            yield return null;
+        }
+
+        yield return new WaitForSeconds(1f);
         SceneManager.LoadScene(nextSceneName);
     }
 }

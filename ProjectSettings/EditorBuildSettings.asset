@@ -26,6 +26,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/EmaceArt/PolyVania/Scenes/PolyVania.unity
     guid: f35e9cd2a0db1cc4bbc833d703f1762f
+  - enabled: 1
+    path: Assets/SlimUI/Modern Menu 1/Scenes/Demos/Pause.unity
+    guid: e7a1c52d05319a349b9dc713a8c8813b
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0
