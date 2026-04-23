@@ -6,20 +6,11 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/SampleScene.unity
-    guid: 99c9720ab356a0642a771bea13969a05
-  - enabled: 1
-    path: Assets/Santuary/Scenes/End.unity
-    guid: 5a616b6a24ffeb2409d62cd70ca95c22
-  - enabled: 1
-    path: Assets/Santuary/Scenes/Sanctuary.unity
-    guid: ad34cc71d391b204a9cac5544d2bfc02
+    path: Assets/SlimUI/Modern Menu 1/Scenes/Demos/Demo1.unity
+    guid: 829a86ba161cdd840842063447f41aab
   - enabled: 1
     path: Assets/DevDen Arch Viz Scotland/Scenes/Intro_Scene.unity
     guid: 7de8b03f661720045bba1bb0ab7c848f
-  - enabled: 1
-    path: Assets/SlimUI/Modern Menu 1/Scenes/Demos/Demo1.unity
-    guid: 829a86ba161cdd840842063447f41aab
   - enabled: 1
     path: Assets/DevDen Arch Viz Scotland/Scenes/Home.unity
     guid: 5d9a04077777e2741aa75a554f7ee3fb
@@ -27,8 +18,11 @@ EditorBuildSettings:
     path: Assets/EmaceArt/PolyVania/Scenes/PolyVania.unity
     guid: f35e9cd2a0db1cc4bbc833d703f1762f
   - enabled: 1
-    path: Assets/SlimUI/Modern Menu 1/Scenes/Demos/Pause.unity
-    guid: e7a1c52d05319a349b9dc713a8c8813b
+    path: Assets/Santuary/Scenes/Sanctuary.unity
+    guid: ad34cc71d391b204a9cac5544d2bfc02
+  - enabled: 1
+    path: Assets/Santuary/Scenes/End.unity
+    guid: 5a616b6a24ffeb2409d62cd70ca95c22
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0
