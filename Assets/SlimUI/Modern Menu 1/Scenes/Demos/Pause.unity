@@ -4223,7 +4223,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f3cfba5987db2ee43b3875a1d9774ab5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ResumeLogic
-  pauseSceneName: Pause
+  pauseMenuUI: {fileID: 0}
+  gameUI: {fileID: 0}
+  mainCamera: {fileID: 0}
 --- !u!114 &2155170905327523251
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4372,8 +4374,8 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 114173851760721469}
-        m_TargetAssemblyTypeName: 
-        m_MethodName: AreYouSure
+        m_TargetAssemblyTypeName: SlimUI.ModernMenu.UIMenuManager, Assembly-CSharp
+        m_MethodName: QuitGame
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -5290,7 +5292,7 @@ GameObject:
   - component: {fileID: 5926623867767247267}
   - component: {fileID: 5926623867767247266}
   m_Layer: 5
-  m_Name: Btn_Settings
+  m_Name: Btn_resume
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

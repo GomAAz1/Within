@@ -3,28 +3,60 @@ using UnityEngine.SceneManagement;
 
 public class ResumeLogic : MonoBehaviour
 {
-    public string pauseSceneName = "PauseMenu";
+    [Header("References")]
+    [SerializeField] private GameObject pauseMenuUI;
 
-    public void BackToGame()
+    private bool isPaused = false;
+
+    void Start()
     {
+        pauseMenuUI.SetActive(false);
+        ResumeGame(); // ensure correct state
+    }
+
+    void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            TogglePause();
+        }
+    }
+
+    void TogglePause()
+    {
+        if (isPaused)
+            ResumeGame();
+        else
+            PauseGame();
+    }
+
+    public void PauseGame()
+    {
+        isPaused = true;
+
+        pauseMenuUI.SetActive(true);
+        
+
+        Time.timeScale = 0f;
+
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+    }
+
+    public void ResumeGame()
+    {
+        isPaused = false;
+
+        pauseMenuUI.SetActive(false);
+
         Time.timeScale = 1f;
-
-        // 1. رجع كاميرا اللعبة والـ UI بتاعها
-        GameObject mainCam = GameObject.FindGameObjectWithTag("MainCamera");
-        if (mainCam != null) mainCam.SetActive(true);
-
-        // بنور على سكريبت التريجر عشان يرجع الـ UI
-        LevelPauseTrigger trigger = FindObjectOfType<LevelPauseTrigger>();
-        if (trigger != null && trigger.gameUI != null) trigger.gameUI.SetActive(true);
 
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
-        SceneManager.UnloadSceneAsync(pauseSceneName);
     }
 
-    // لو داس Esc تاني وهو في المنيو يرجع برضه
-    void Update()
+    public void QuitGame()
     {
-        if (Input.GetKeyDown(KeyCode.Escape)) BackToGame();
+				Application.Quit();
     }
 }
