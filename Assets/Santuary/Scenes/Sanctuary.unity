@@ -2751,7 +2751,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 1329261747}
         m_TargetAssemblyTypeName: ResumeLogic, Assembly-CSharp
         m_MethodName: QuitGame
         m_Mode: 1
@@ -44719,7 +44719,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 0}
+      - m_Target: {fileID: 1329261747}
         m_TargetAssemblyTypeName: ResumeLogic, Assembly-CSharp
         m_MethodName: ResumeGame
         m_Mode: 1
