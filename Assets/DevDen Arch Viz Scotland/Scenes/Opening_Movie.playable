@@ -2137,6 +2137,7 @@ MonoBehaviour:
   - {fileID: 7236483807809397052}
   - {fileID: -5701544986608256672}
   - {fileID: -2230695816913383694}
+  - {fileID: 6374907713220152779}
   m_FixedDuration: 0
   m_EditorSettings:
     m_Framerate: 60
@@ -2320,6 +2321,29 @@ MonoBehaviour:
   m_Loop: 1
   m_Version: 1
   m_Rotation: {x: 0, y: 0, z: 0, w: 1}
+--- !u!114 &6374907713220152779
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 24941514287446b41ab1eebb856df05a, type: 3}
+  m_Name: Subtitle Track
+  m_EditorClassIdentifier: Assembly-CSharp::SubtitleTrack
+  m_Version: 3
+  m_AnimClip: {fileID: 0}
+  m_Locked: 0
+  m_Muted: 0
+  m_CustomPlayableFullTypename: 
+  m_Curves: {fileID: 0}
+  m_Parent: {fileID: 11400000}
+  m_Children: []
+  m_Clips: []
+  m_Markers:
+    m_Objects: []
 --- !u!114 &6842094051045978078
 MonoBehaviour:
   m_ObjectHideFlags: 1
